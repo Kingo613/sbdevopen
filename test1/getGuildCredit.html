@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<title>获取用户勋章信息</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.9.1/vconsole.min.js"></script>
+  </head>
+  <body>	
+  <script>window.onload = function() {      var vConsole = new VConsole();    }    function sendPostRequest() {      const token = document.getElementById("token").value;      const api = document.getElementById("api").value;     const payload = document.getElementById("payload").value;      const url = `https://a1.fanbook.mobi/api/bot/${token}/${api}`;      fetch(url, {       method: "POST",        body: payload,        headers: {          "Content-Type": "application/json"        }      })      .then(response => response.json())      .then(data => {        document.getElementById("response").textContent = JSON.stringify(data);      })      .catch(error => {        console.error("Error:", error);      });    }</script>
+  <style>.login2 {
+            border: none;
+            background-color:red;
+            color: #fff;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            }
+  .browser-content{
+		border:5px solid orange;
+		width:220px;
+		height:245px;
+        border-radius:4px;
+	}
+  .browser-content {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .browser-content a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .browser-content a:hover {
+            text-decoration: underline;
+        }
+        .login {
+            border: none;
+            background-color: green;
+            color: #fff;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            
+            tansition: background-color 0.3s;
+        }
+      /* https://fonts.font.im/css?family=Raleway:500,700&display=swap */
+@font-p {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(https://fonts.gstatic.font.im/s/raleway/v19/1Ptug8zYS_SKggPNyCAIT4ttDfCmxA.woff2) format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* ... */
+p: -1px -1px 0 #efe4d1,
+              1px -1px 0 #efe4d1,
+              -1px 1px 0 #efe4d1,
+              1px 1px 0 #efe4d1;</style>
+    <div class="broser-content" id="browser-content">
+	<form method="post" action="https://a1.fanbook.cn/api/bot/6978e0b4290d54e90e1cca465d4d9b4f8df20c9a89a724f45f6f34cf8ea93dead4ceab8d3b59fa3699527d1ec2f78d5f/getGuildCredit" >
+        <p  id="p" class="p">用户【长】ID：</p><input type="number" name="user_id" id="input" class="input" />
+        </br>
+        <p id="p" class="p">服务台ID：</p><input type="number" name="guild_id" id="input" class="input"  alt="516495988547244032" value="516495988547244032" placeholder="516495988547244032"/>
+        <!--注意提交按钮在form表单中-->
+        </br></br>
+        <input type="submit" class="login" id="login" value="提交" onclick="sendPostRequest()"/>
+        <input type="reset" class="login2" id="login2" value="重設" />
+        <div id="response"></div>
+    </form>
+</div>
+    
+    <script>function search() {
+            const searchBar = document.getElementById('searchBar');</script>
+  </body>
+</html>
