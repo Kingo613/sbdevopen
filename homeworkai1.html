@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P4談詩專用錄音解答</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            background: #fafafa;
+        }
+
+        .message {
+            margin: 12px 0;
+            padding: 12px 16px;
+            border-radius: 12px;
+            animation: fadeIn 0.3s;
+            max-width: 80%;
+            position: relative;
+        }
+
+        .user {
+            background: #2d6df6;
+            color: white;
+            margin-left: auto;
+            border-radius: 12px 12px 0 12px;
+        }
+
+        .assistant {
+            background: #e8f0fe;
+            color: #1a1a1a;
+            margin-right: auto;
+            border-radius: 12px 12px 12px 0;
+        }
+
+        .assistant::before {
+            content: "🤖";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+        }
+
+        .input-area {
+            padding: 16px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 12px;
+            background: white;
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: none;
+            min-height: 50px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #userInput:focus {
+            border-color: #2d6df6;
+        }
+
+        #submitBtn {
+            background: #2d6df6;
+            color: white;
+            border: none;
+            padding: 0 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+            position: relative;
+        }
+
+        #submitBtn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        #submitBtn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            .message {
+                max-width: 90%;
+            }
+            .assistant::before {
+                left: -20px;
+            }
+            #submitBtn {
+                min-width: 60px;
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <p style="text-align: center;">專用人工智能(P4談詩)</br>ds-v3-turbo-ppinfra</p>
+        <div class="chat-container" id="chatHistory">
+            <div class="message assistant">請問對這段錄音有什麼疑問？</div>
+        </div>
+        <div class="input-area">
+            <textarea 
+                id="userInput" 
+                placeholder="輸入問題..." 
+                rows="1"
+                autocomplete="off"
+            ></textarea>
+            <button id="submitBtn" onclick="sendMessage()">發送</button>
+        </div>
+    </div>
+
+    <script>
+        <!-- 某些人想白嫖API？这个Key里余额已经负了，而且没实名 -->
+        const API_KEY = 'sk_wuzOcrISpR6EMGOyaOKCSeG79LN5yqShD7wIvHkgnO0';
+        const API_ENDPOINT = 'https://api.ppinfra.com/v3/openai/chat/completions';
+        const MODEL = 'deepseek/deepseek-v3-turbo';
+
+        let chatHistory = [
+            { role: 'assistant', content: '你负责解答以下錄音内容:四上 單元四 第七課 聆聽材料 談詩 詩詩到紫山的新居探訪，兩人在閒談。 紫山，你的新居環境不錯呀。 對，比以前好多了。 從這個窗子看出去，景色不錯呀。 有什麼好看，下面只是一條河，兩岸全是樓房，在房屋之間只看到一小部分的山頂。 你應該看看河畔的長廊，沿河是又長又直的腳踏車徑和環跑徑，而靠近房屋的那邊是一列樹木，當中家有花叢，不同顏色的大大小小花朵，襯著深淺不同的綠葉，你不覺得很美嗎？我沒有留意你所說的美景，我比較喜歡看人們的活動情況。 你看，下面除了很多人騎腳踏車和跑步外，還有不少人在跳繩、打球、做體操呢。 紫山，你看，那邊有個小朋友在學走路呀，他腳步不穩，像快要摔倒似的。 怎會摔倒呢？他旁邊有四個大人呀，應該是爸爸、媽媽、爺爺、奶奶吧，他們在孩子的前面伸出雙手，多安全呀。 真有趣，我真羨慕你家有那麼好的景觀，你應該好好享受。 是的，我還可以一邊欣賞風景一邊背詩。 好主意，說到背詩，紫山，你那天在課堂上誦讀夏日田園雜訊的時候，真的有板有眼，老師也稱讚呢。 謝謝，我喜歡讀詩，尤其是絕句，簡簡單單四句詩歌，內容豐富，意境深遠。 你讀過很多絕句嗎？不太多，小時候，爸媽就要求我們兄妹倆背誦古詩，由於絕句字數少，又容易上口，我們都很喜歡。 你明白詩的意思嗎？當時不明白，只是背出來，不懂是什麼意思，現在識字多了才明白過來，能夠領會詩人的心意。 可以給我介紹一兩首你喜歡的詩嗎？沒問題，我最喜歡洛賓王的《永娥》。 永娥，我也學過，娥娥娥，曲象象天歌，白毛浮綠水，紅掌撥青波。 你也讀得不錯。 真的，詩人創作這首詩的時候，年紀比我們還小呢，聽說是他七歲時寫的，寫得多麼活潑有趣，這是屬於動態描寫手法嗎？是的，詩中描寫白色的鵝兒在水中伸著長脖子唱歌，紅色的掌在水中不停地撥動，腦海裡想象著白鵝那活潑可愛的樣子，就像一邊讀一邊看著一段短片似的。 子珊，你讀過的詩中有沒有靜態描寫的呢？當然有，而且多得很呢，有的詩讀起來，腦海中就出現了一幅畫。 舉些例子吧。 好啊，你讀過孟浩然的《過故人莊》嗎？有兩句是綠樹村邊河，青山郭外斜，這裡寫山寫樹就是靜態的。 這麼一來，我明白了靜態描寫和動態描寫怎樣分辨了。 那麼我考考你好嗎？也好，試試吧。 我背誦李白的靜夜思給你聽聽。 床前明月光，一世地上霜，舉頭望明月，低頭思故鄉。 這首詩我也會背，如果要我分辨詩中動和靜的景物，我認為前面兩句是靜態描寫，月光像一層霜，照在床前，跟著後兩句是描寫詩人舉頭低頭的動作，屬於動態描寫。 答對了，你該多讀詩，樂趣多著呢。 那麼有沒有一首御用動態描寫而用得很突出的詩呢？當然有，漢月符裡有一首江南是很有趣的。 江南可採蓮，蓮葉和田田，魚戲蓮葉尖，魚戲蓮葉東，魚戲蓮葉西，魚戲蓮葉南，魚戲蓮葉北。 哈哈，真的很有趣，用田田兩字比喻一片片大大的蓮葉連在一起，魚兒在蓮葉尖到處遊戲，動態靜態描寫都有呢。 我覺得最精彩的是描寫魚兒在蓮葉尖遊來游去那四句，十分形象化。 子珊，這樣談談原來更能領略詩意，以後我們多些一起談詩吧。' }
+        ];
+        let isProcessing = false;
+
+        async function sendMessage() {
+            if (isProcessing) return;
+
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('user', message);
+            userInput.value = '';
+            isProcessing = true;
+            updateButtonState(true);
+
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/event-stream'
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [...chatHistory, { role: 'user', content: message }],
+                        temperature: 0.7,
+                        max_tokens: 4096,
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || `HTTP錯誤 ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let aiMessage = addMessage('assistant', '');
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            try {
+                                const data = JSON.parse(line.slice(5).trim());
+                                if (data.choices?.[0]?.delta?.content) {
+                                    fullResponse += data.choices[0].delta.content;
+                                    aiMessage.textContent = fullResponse;
+                                    chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+                                }
+                            } catch (e) {
+                                console.warn('解析异常:', e);
+                            }
+                        }
+                    }
+                }
+
+                // 保存上下文
+                chatHistory.push({ role: 'user', content: message });
+                chatHistory.push({ role: 'assistant', content: fullResponse });
+
+            } catch (error) {
+                console.error('錯誤:', error);
+                addMessage('assistant', `錯誤: ${error.message}`);
+            } finally {
+                isProcessing = false;
+                updateButtonState(false);
+            }
+        }
+
+        function addMessage(role, content) {
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.textContent = content;
+            chatHistoryDiv.appendChild(messageDiv);
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            return messageDiv;
+        }
+
+        function updateButtonState(isLoading) {
+            const button = document.getElementById('submitBtn');
+            button.disabled = isLoading;
+            button.classList.toggle('loading', isLoading);
+            button.textContent = isLoading ? '' : '發送';
+        }
+
+        // 回车发送
+        document.getElementById('userInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
